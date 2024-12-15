@@ -1,0 +1,111 @@
+INTRODUCCIÓN:
+
+Este proyecto me permitio desarrollar una solución de inteligencia de negocios robusta y escalable, centrada en la mejora continua de la calidad de los datos y la generación de insights accionables. A través de la implementación de Power Query, se busca transformar datos crudos y heterogéneos en información confiable y consistente. Mediante la creación de un modelo de datos semántico y la utilización de DAX para definir medidas clave de rendimiento (KPIs), se logrará un entendimiento profundo de los procesos del negocio. Finalmente, se diseñarán visualizaciones
+
+interactivas y estéticamente agradables en Power BI, que permitan a los usuarios explorar los datos de manera intuitiva y tomar decisiones basadas en evidencias.
+
+
+DESARROLLO DEL PROYECTO
+
+AVANCE 1: Para el primer avance comencé descargando la base de datos desde la aplicación de Henry, luego procedí a restaurarla mediante SQL, una vez restaurada seguí a conectarla con Power Bi y una vez cargar las tablas solicitadas que fueron. DimProduct, DimProductCategory, DimProductSubcategory, DimTerritory, DimDate, DimGeogragraphy, DimPromotion, DimFactInternetSale y por último cargamos la DimCustomer que fue proporcionada como archivo excel.
+Continúe con una exploración de cada tabla y a que hacía referencia cada columna. Seguí con la verificación de filas en blanco en cada tabla y con la eliminación de estas, también elimine columnas que no tenían registros,y con algunas que figuraban en 90% o menos valido y que no eran relevantes para el análisis que se nos solicitó en el momento.
+Combine la tabla de DimCustomer con la DimGeography de donde se trajeron las columnas City, StateProvinceName, StateProvinceCode. Lo mismo hice con la Tabla DimProduct combinándola con la DimSubcategory de donde traje las columnas SubcategoryName y
+ProductCategoryKey, luego combine la DimProduct con la DimCategory y traje la columna ProductCategory Name.
+
+-PASOS APLICADOS:
+DimDate: Origen, navegación, columnas quitadas
+DimGeography: Origen, navegación, columnas quitadas
+DimProduct: Origen, navegación, columnas quitadas, filas superiores
+
+quitadas, columnas quitadas, valor reemplazado, consultas combinadas,	se expandió DimProductSubcategory, columnas con nombre cambiado, columnas quitadas, consultas combinadas, se expandió DimProductCategory, columnas con nombre cambiado.
+DimProductCategory: Origen, navegación, columnas quitadas DimProductSubCategory: Origen, navegación, columnas quitadas DimPromotion: Origen, navegación, columnas quitadas DimSalesTerritory: Origen, navegación, filas inferiores quitadas. FactInternetSales: Origen, navegación, columnas quitadas DimCustomer: Origen, navegación, encabezados promovidos, tipo cambiado, columnas quitadas, filas en blanco eliminadas, consultas combinadas, se expandió DimGeography, columnas con nombres cambiados, columnas reordenadas.
+
+AVANCE 2: En este avance conocimos las preguntas de negocio y teniendo en cuenta ello se nos planteó realizar un reporte general y un reporte solo para USA, también a partir de ello desarrollamos el mockup y diseñamos el modelo relacional.
+Relaciones:
+FactInternetSales 1:N DimProduct FactInternetSales 1:N DimCustomer FactInternetSales 1:N DimDate
+FactInternetSales 1:N DimPromotion
+FactInternetSales 1:N DimSalesTerritory
+AVANCE 3: En este tercer avance comencé declarando la tabla calendario, para el caso de nuestra base de datos sería la tabla DimDate, una vez declarada, agregamos una columna personalizada de mes corto con la siguiente fórmula FORMAT(DimDate[FullDateAlternateKey], “mmm”) y otra columna indicando trimestre FORMAT(QUARTER('DimDate'[FullDateAlternateKey]), "00")
+
+Una vez realizado el paso anterior deshabilite las tablas DimGeography, DimProductCategory y DimProductSubCategory, y de esta forma ya no hacen parte del modelo relacional.
+
+A continuación seguí con la creación de las medidas necesarias para responder a las preguntas de negocio del avance anterior.
+
+Ingresos Totales: SUM(FactInternetSales[SalesAmount])
+Ingresos Totales Periodo Anterior: CALCULATE([Ingresos Totales],PARALLELPERIOD(DimDate[FullDateAlternateKey], -1,MONTH))
+% Variación periodo de tiempo: IF(ISBLANK([Ingresos Totales]), BLANK(), 1-DIVIDE([Total Ventas Periodo Anterior],[Ingresos Totales],0))
+Cantidad vendida: SUM(FactInternetSales[OrderQuantity])
+Utilidad bruta: [Ingresos Totales]-[COGS]
+Utilidad bruta periodo anterior: CALCULATE([Utilidad Bruta],PARALLELPERIOD(DimDate[FullDateAlternateKey], -1,MONTH
+% Variación periodo de tiempo: IF(ISBLANK([Utilidad Bruta]), BLANK(), 1-DIVIDE([Utilidad Bruta Periodo Anterior],[Utilidad Bruta],0)) Utilidadneta:SUMX(FactInternetSales,FactInternetSales[SalesAmount]- FactInternetSales[TotalProductCost]-FactInternetSales[TaxAmt]- FactInternetSales[Freight])
+Utilidadnetaperiodoanterior:CALCULATE([UtilidadNeta],PARALLELPERIOD(D imDate[FullDateAlternateKey], -1,MONTH))
+% Variación periodo de tiempo: IF(ISBLANK([Utilidad Neta]), BLANK(), 1- DIVIDE([Utilidad Neta Periodo Anterior],[Utilidad Neta],0))
+
+COGS: SUMX(FactInternetSales, FactInternetSales[TotalProductCost]*FactInternetSales[OrderQuantity]) COGS Periodo anterior: CALCULATE([COGS], PARALLELPERIOD(DimDate[FullDateAlternateKey], -1,MONTH))
+% Variacion periodo de tiempo: IF(ISBLANK([COGS]), BLANK(), 1-DIVIDE([COGS Periodo anterior],[COGS],0))
+Cantidad de clientes: COUNTROWS(SUMMARIZE('DimCustomer', 'DimCustomer'[CustomerKey],-- Columna de Pais "Numero_Clientes", COUNTROWS()-- Conteo de clientes por pais.
+Costo de envio: SUM(FactInternetSales[Freight])
+Costo Operacional: ([COGS]+[Costo envio])
+% Margen utilidad bruta: DIVIDE([Utilidad Bruta],[Ingresos Totales],0)*100
+% Margen utilidad neta: DIVIDE([Utilidad Neta],[Ingresos Totales],0)*100
+% Margen utilidad COGS: DIVIDE([COGS],[Ingresos Totales],0)*100
+
+
+
+
+
+Luego de crear cada medida las organiza en carpetas, una hace referencia a las medidas financieras y la otra hace referencia a las de inteligencia de tiempo.
+FINANCIERAS:
+Ingresos Totales
+
+Ingresos Totales Periodo Anterior Cantidad vendida
+Utilidad bruta
+Utilidad bruta periodo anterior Utilidad neta
+Utilidad neta periodo anterior
+COGS
+COGS Periodo anterior Cantidad de clientes Costo de envío
+Costo Operacional
+% Margen utilidad bruta
+% Margen utilidad neta
+% Margen utilidad COGS
+
+
+
+INTELIGENCIA DE TIEMPO
+% Variación periodo de tiempo ingresos Totales
+% Variación periodo de tiempo utilidad bruta
+% Variación periodo de tiempo utilidad neta
+% Variación periodo de tiempo COGS.
+
+AVANCE 4: En este último avance realice lo que es el Dashboard, comencé a configurar el lienzo, Alto:1080 y Ancho:1920. a continuación realice los parámetros de campo con los indicadores a los que hacía referencia el avance. Ingresos Totales, Utilidad neta, Utilidad Bruta, COGS, % margen neto, % margen bruto y costo de envío, esto sobre el mapa que muestra la cantidad de clientes por país. Una vez hecho esto continúe con el diseño del dashboard agregando el logo de la empresa, las visualizaciones que dan respuesta a las preguntas de negocio y creando botones para interactuar entre paginas y marcadores.
+
+ANÁLISIS GENERAL DEL TABLERO
+PORTADA: En esta página agregue el logo de la empresa, con el título reporte financiero y con los botones que permiten la interacción con las páginas siguientes, en este caso serian con el reporte general, reporte de USA.
+
+REPORTE GENERAL: En esta página vamos a visualizar un reporte financiero general. Al lado izquierdo tenemos el logo de la empresa y debajo de esto tenemos los botones que nos permiten la interacción con otras páginas. En la parte superior podemos ver el título y a un costado los filtros necesarios para cada visualización. En la parte superior debajo del título tenemos los KPIS importantes en este análisis, como lo son; Total de ingresos, cantidad vendida, utilidad bruta y utilidad neta.
+
+En la primera visualización que está debajo de los KPIS a la izquierda , tenemos los ingresos, utilidad neta, utilidad bruta y COGS comparada con las de periodos anteriores. En esta visualización en especial quise crear una navegación de marcadores para no sobrecargar el tablero de elementos y así crear una interacción fluida en estos gráficos. Al lado de esta visualización tenemos la Utilidad neta y la utilidad bruta de cada subcategoría, aquí elegí un gráfico de barras para realizar la comparación entre ambas utilidades.Continuando con las visualizacion vemos abajo a la izquierda la visualización que corresponde a los COGS, utilidad bruta e ingresos por mes, en este campo elegí un gráfico de área ya que ayudan a visualizar los datos a lo largo del tiempo, seguido de este grafico tenemos el mapa donde podemos ver la cantidad de clientes que tenemos por pais y seguidamente los tacometros que hacen referencia a datos muy puntuales como, % Margen utilidad Bruta, %COGS, y el costo operacional.
+
+REPORTE USA: En este reporte al igual que en el general podemos ver en la parte izquierda el logo y los botones que nos permiten interactuar con las demás páginas. En la parte superior tenemos los KPIS importantes para este análisis. Debajo de los Kpis tenemos una tabla matriz, donde se muestran las ciudades, ingresos, utilidades, COGS, márgenes de utilidades y el costo de envío. Del lado derecho tenemos un gráfico donde podemos ver cada categoría por ciudad. y en el grafico de la parte inferior elige un gráfico de
+
+barras para ver el comparativo de ingresos con los periodos anteriores.
+
+
+RESULTADOS PRINCIPALES
+
+Analizando las visualizaciones podemos llegar a concluir que del 2005 al 2010 no se registran ventas, del 2010 registramos ventas el último mes, el año con más ventas fue el 2013 y del 2014 solo se registran ventas los dos primeros meses. Podemos destacar que Estados Unidos refleja la mejor rentabilidad y es el mejor mercado. Entre las categorias resaltamos que la BIKES es la que registra mayor demanda y dentro de la Subcategorias resaltamos el rendimiento de ROADS BIKES.
+
+RECOMENDACIONES:
+Para aquellos productos que presentan bajas ventas.
+Ofertas y descuentos: Crea promociones especiales, descuentos o paquetes que incluyan los productos de baja venta. Esto puede incentivar a los clientes a comprar esos productos, especialmente si se combinan con productos más populares.
+Campañas de marketing dirigidas: Utiliza la información recopilada de tus análisis para diseñar campañas de marketing específicas para promocionar estos productos. Puedes utilizar correos electrónicos, redes sociales u otros medios para llegar a tu público objetivo.
+Optimización de la presentación: Si vendes en línea, asegúrate de que los productos de baja venta estén bien presentados en tu sitio web. Esto incluye
+
+imágenes atractivas, descripciones claras y destacando sus características únicas o beneficios.
+Recopilación de feedback: Solicita feedback a los clientes que compren estos productos promocionados. Sus comentarios pueden ayudarte a ajustar tu estrategia de promoción y mejorar la oferta de productos en el futuro.
+
+REFLEXION PERSONAL
+
+Este proyecto me permitió aplicar los conocimientos adquiridos en Power BI y profundizar en el análisis de datos. Fue gratificante ver cómo los datos crudos se transformaron en información útil para la toma de decisiones. Además, el proceso de diseño del dashboard me permitió desarrollar habilidades de visualización y storytelling.
+Desafíos y Aprendizajes
+Durante el desarrollo del proyecto, se enfrentaron algunos desafíos, como la limpieza de datos inconsistentes y la optimización del rendimiento de las medidas para grandes conjuntos de datos. Sin embargo, estos desafíos se superaron mediante la aplicación de técnicas adecuadas y la búsqueda de soluciones creativas.
